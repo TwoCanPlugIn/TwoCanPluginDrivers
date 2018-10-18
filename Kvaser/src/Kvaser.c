@@ -153,11 +153,17 @@ DllExport int OpenAdapter(void)	{
 	char *driverName;
 	driverName = (char *)malloc(1024);
 
-	if (canGetChannelData(0, canCHANNELDATA_DRIVER_NAME, driverName,sizeof(driverName)) != canOK) {
+	status = canGetChannelData(0, canCHANNELDATA_DRIVER_NAME, driverName, sizeof(driverName));
+	if (status != canOK) {
+		free(driverName);
+		DebugPrintf(L"Kvaser Get Channel Data failed (%d)\n",status);
+		return SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_GET_SETTINGS);
+	}
+	else {
 		// BUG BUG should do something useful with the driver name !!
+		free(driverName);
 	}
 
-	free(driverName);
 
 	// Open Channel 0
 	handle = canOpenChannel(0, 0);
