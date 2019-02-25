@@ -17,6 +17,10 @@
 //
 // NMEA2000® is a registered Trademark of the National Marine Electronics Association
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #ifndef _TWOCAN_DRIVER
 #define _TWOCAN_DRIVER
@@ -38,6 +42,13 @@ typedef unsigned char byte;
 // Length of an array 
 #define COUNT(x)  (sizeof(x) / sizeof((x)[0]))
 
+// CAN v2.0 29 bit header as used by NMEA 2000
+typedef struct CanHeader {
+	byte priority;
+	byte source;
+	byte destination;
+	unsigned int pgn;
+} CanHeader;
 
 // A few functions used to convert the raw data from the different Windows devices (Axiomtek, Kvaser, Cantact) into a consistent CAN Frame byte array
 
@@ -47,7 +58,13 @@ void ReverseHeader(byte* buf);
 
 // Convert a hexadecimal string to a byte array
 // Cantact & Axiomtek as serial devices present all of their data as hex strings so we convert the hex string to a byte array
+
+
 int ConvertHexStringToByteArray(const byte *hexstr, const unsigned int len, byte *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 // Convert an unsigned integer to a 4 byte array
 // Kvaser presents the CAN header as an integer

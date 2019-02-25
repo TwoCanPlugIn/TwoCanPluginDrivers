@@ -19,14 +19,14 @@
 //
 // Project: TwoCan
 // Project Description: NMEA2000 Plugin for OpenCPN
-// Unit: Driver for Log File Reader
-// Unit Description: Replays exisiting log file, created by TwoCan Device
-// Date 6/8/2018
-// Function: Read a line from the log file, convert from raw format into 
+// Unit: Driver for Candump Log File format
+// Unit Description: Replays exisiting log file, created by Candump (Linux utility)
+// Date 29/12/2018
+// Function: Read a line from the log file, convert from Candump format into 
 // TwoCan byte array and signals an event to the application
 //
 
-#include "..\inc\filedevice.h"
+#include "..\inc\candumplog.h"
 
 #include "..\..\common\inc\twocanerror.h"
 
@@ -50,6 +50,9 @@ byte *canFramePtr;
 
 // Variable to indicate thread state
 BOOL isRunning = FALSE;
+
+// Number of incorrectly frmatted lines
+int badLineCount = 0;
 
 //
 // The DLL entry point
@@ -80,7 +83,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD  fdwReason, LPVOID    lpvReserved)
 //
 
 DllExport char *DriverName(void)	{
-	return (char *)L"TwoCan Logfile Reader";
+	return (char *)L"Candump Logfile Reader";
 }
 
 //
@@ -112,7 +115,7 @@ DllExport int OpenAdapter(void)	{
 
 	// Create an event that is used to notify the caller of a received frame
 	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
-	
+
 	if (frameReceivedEvent == NULL)
 	{
 		// Fatal error
@@ -141,6 +144,22 @@ DllExport int OpenAdapter(void)	{
 		DebugPrintf(L"Open Mutex failed (%d)\n", GetLastError());
 		return SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_CREATE_FRAME_RECEIVED_MUTEX);
 	}
+
+	// Check if the log file exists
+	WCHAR fileName[MAX_PATH];
+	HRESULT result;
+
+	result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, fileName);
+
+	if (result == S_OK) {
+		PathAppend(fileName, CONST_LOG_FILE);
+
+		if (!PathFileExists((LPCWSTR)fileName)) {
+			DebugPrintf(L"Log File Not found (%d)\n", GetLastError());
+			return SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_FILE_NOT_FOUND);
+		}
+	}
+
 	return TWOCAN_RESULT_SUCCESS;
 }
 
@@ -156,6 +175,10 @@ DllExport int CloseAdapter(void)	{
 	// Wait for the thread to exit
 	int waitResult;
 	waitResult = WaitForSingleObject(threadFinishedEvent, 1000);
+
+	if (waitResult == WAIT_OBJECT_0) {
+		DebugPrintf(L"Wait for threadFinishedEvent succeeded");
+	}
 
 	if (waitResult == WAIT_TIMEOUT) {
 		DebugPrintf(L"Wait for threadFinishedEvent timed out");
@@ -179,17 +202,17 @@ DllExport int CloseAdapter(void)	{
 	}
 
 	closeResult = CloseHandle(frameReceivedEvent);
-	
+
 	if (closeResult == 0) {
 		DebugPrintf(L"Close frameReceivedEvent Error: %d", GetLastError());
 	}
 
 	closeResult = CloseHandle(threadHandle);
-	
+
 	if (closeResult == 0) {
 		DebugPrintf(L"Close threadHandle Error: %d", GetLastError());
 	}
-	
+
 	return TWOCAN_RESULT_SUCCESS;
 }
 
@@ -200,7 +223,7 @@ DllExport int CloseAdapter(void)	{
 //
 
 DllExport int ReadAdapter(byte *frame)	{
-	
+
 	// Save the pointer to the Can Frame buffer
 	canFramePtr = frame;
 
@@ -209,111 +232,126 @@ DllExport int ReadAdapter(byte *frame)	{
 
 	// Start the read thread
 	threadHandle = CreateThread(NULL, 0, ReadThread, NULL, 0, &threadId);
-	
+
 	if (threadHandle != NULL) {
 		DebugPrintf(L"Read thread started: %d\n", threadId);
 		return TWOCAN_RESULT_SUCCESS;
 	}
-	
+
 	// Fatal error
 	isRunning = FALSE;
-	DebugPrintf(L"Read thread failed: %d (%d)\n", threadId,GetLastError());
+	DebugPrintf(L"Read thread failed: %d (%d)\n", threadId, GetLastError());
 	return SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_CREATE_THREAD_HANDLE);
 }
 
 //
-// Read thread, reads previously saved raw NMEA 2000 data from the log file.
+// Read thread, reads previously saved NMEA 2000 data from the output of Candump (Linux utility).
 // If a valid frame is received parse the frame into the correct format and notify the caller
 //
 
 DWORD WINAPI ReadThread(LPVOID lParam)
 {
 	DWORD mutexResult;
-	FILE *fileHandle;
 	WCHAR fileName[MAX_PATH];
 	HRESULT result;
 	byte canFrame[12];
-	byte *framePtr = canFrame;
-	char *token;
-	char delimiter[2] = ",";
-	char buffer[1024];
+	
+	
+	// For Posix use the following
+	// #include <unistd.h>
+	// #include <sys/types.h>
+	// #include <pwd.h>
+	// struct passwd *pw = getpwuid(getuid());
+	// const char *homedir = pw->pw_dir;
+	// const char *homedir;
+	//if ((homedir = getenv("HOME")) == NULL) {
+	//	homedir = getpwuid(getuid())->pw_dir;
+	//}
 
 	result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, fileName);
 
 	if (result == S_OK) {
 		PathAppend(fileName, CONST_LOG_FILE);
-		
+
 		DebugPrintf(L"Log File: %s\n\r", fileName);
-		
+
 		if (PathFileExists((LPCWSTR)fileName)) {
-			
-			fileHandle = _wfopen((wchar_t *)fileName, (wchar_t *)"r");
-			
-			if (fileHandle == NULL) {
-				DebugPrintf(L"File Error\n");
-				ExitThread(SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_FILE_NOT_FOUND));
-			}
+
+			std::ifstream inputFile(fileName);
 
 			// read a line from the log file
+			std::string inputLine;
+			// specific regular expression for candump log format
+			std::regex canDumpRegex("^\\([0-9]+.[0-9]+\\)\\scan[0-9]\\s([0-9A-F]{8})#([0-9A-F]{16})$");
+			std::smatch matchGroups;
+
 			while (isRunning)  {
-
-				if (!fgets(buffer, sizeof(buffer), fileHandle)) {
+				std::getline(inputFile, inputLine);
+				if (inputFile.eof()) {
 					// if at the end of the file, restart from the beginning
-					rewind(fileHandle);
-					fgets(buffer, sizeof(buffer), fileHandle);
+					inputFile.clear();
+					inputFile.seekg(0);
+					std::getline(inputFile, inputLine);
 				}
 
-				// read each hex character into a byte value
-				token = strtok(buffer, delimiter);
-				
-				while (token != NULL) {
-					*framePtr = (byte)strtol(token, NULL, 16);
-					// BUG BUG Debug, print out each NMEA 2000 value
-					DebugPrintf(L"%d ", *framePtr);
-					token = strtok(NULL, delimiter);
-					framePtr++;
-				} 
-
-				// Terminate each NMEA 2000 frame with newline character
-				DebugPrintf(L"\n");
-
-				// make sure we can get a lock on the buffer
-				mutexResult = WaitForSingleObject(frameReceivedMutex, 200);
-
-				if (mutexResult == WAIT_OBJECT_0) {
-					// copy the frame to the buffer
-					memcpy(canFramePtr,canFrame, 12);
-					
-					// reset the pointer
-					framePtr = canFrame;
-
-					// release the lock
-					ReleaseMutex(frameReceivedMutex);
-
-					// Notify the caller
-					if (SetEvent(frameReceivedEvent)) {
-						Sleep(10);
+				// BUG BUG Not sure if this trickles up to report the error
+				if (!std::regex_match(inputLine, canDumpRegex)) {
+					DebugPrintf(L"Invalid Log file Format: %s\n", inputLine);
+					badLineCount++;
+					if (badLineCount == CONST_MAX_BAD_LINES) {
+						isRunning = FALSE;
+						inputFile.close();
+						SetEvent(threadFinishedEvent);
+						ExitThread(SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_INVALID_LOGFILE_FORMAT));
 					}
+				}
+
+				if (std::regex_match(inputLine, matchGroups, canDumpRegex)) {
+
+					// Copy the 4 byte header
+					unsigned long temp = std::strtoul(matchGroups[1].str().c_str(), NULL, 16);
+					memcpy(&canFrame[0], &temp, 4);
+
+					// copy the 8 byte payload
+					byte payload[8];
+					ConvertHexStringToByteArray((const byte *)matchGroups[2].str().c_str(), 8, payload);
+					memcpy(&canFrame[4], payload, 8);
+
+					// make sure we can get a lock on the buffer
+					mutexResult = WaitForSingleObject(frameReceivedMutex, 200);
+
+					if (mutexResult == WAIT_OBJECT_0) {
+						// copy the frame to the buffer
+						memcpy(canFramePtr, &canFrame[0], 12);
+
+						// release the lock
+						ReleaseMutex(frameReceivedMutex);
+
+						// Notify the caller
+						if (SetEvent(frameReceivedEvent)) {
+							Sleep(10);
+						}
+						else {
+
+							DebugPrintf(L"Set Event Error: %d\n", GetLastError());
+						}
+					}
+
 					else {
-						
-						DebugPrintf(L"Set Event Error: %d\n", GetLastError());
+						DebugPrintf(L"Adapter Mutex: %d -->%d\n", mutexResult, GetLastError());
 					}
-				}
 
-				else {
-					DebugPrintf(L"Adapter Mutex: %d -->%d\n", mutexResult, GetLastError());
-				}
-
+				} // end if regex
 
 			} // end while isRunning 
-				
-			DebugPrintf(L"Closing File\n");
-			fclose(fileHandle);
 
-			SetEvent(threadFinishedEvent);
+			DebugPrintf(L"Closing File\n");
+			inputFile.close();
+
+			SetEvent(threadFinishedEvent);				
 			ExitThread(TWOCAN_RESULT_SUCCESS);
 
-		} // end if file "twocanraw.log" exists
+		} // end if file "candump.log" exists
 		else {
 			DebugPrintf(L"LogFile Error: %d (%d)\n", result, GetLastError());
 			isRunning = FALSE;

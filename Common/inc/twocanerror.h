@@ -28,7 +28,17 @@
 #include <ctype.h>
 
 // Formatted debug output
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void DebugPrintf(wchar_t *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 // Routine to retrieve human readable win32 error message
 char *GetErrorMessage(int win32ErrorCode);
@@ -100,5 +110,5 @@ char *GetErrorMessage(int win32ErrorCode);
 #define TWOCAN_ERROR_PATH_NOT_FOUND 36
 #define TWOCAN_ERROR_FILE_NOT_FOUND 37
 #define TWOCAN_ERROR_ADAPTER_NOT_FOUND 38
-#define TWOCAN_ERROR_INVALID_LOGFILE_FORMAT 29
+#define TWOCAN_ERROR_INVALID_LOGFILE_FORMAT 39
 #endif

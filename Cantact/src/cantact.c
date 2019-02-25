@@ -450,7 +450,6 @@ DWORD WINAPI ReadThread(LPVOID lpParam) {
 	ExitThread(TWOCAN_RESULT_SUCCESS);
 }
 
-
 //
 // Configure the Cantact adapter
 // Set the bus speed to 250K as used by NMEA 2000
