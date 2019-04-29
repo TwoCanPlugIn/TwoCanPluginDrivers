@@ -42,6 +42,7 @@ DllExport char *ManufacturerName(void);
 DllExport int OpenAdapter(void);
 DllExport int CloseAdapter(void);
 DllExport int ReadAdapter(byte *frame);
+DllExport int WriteAdapter(const unsigned int id, const int dataLength, byte *data);
 
 DWORD WINAPI ReadThread(LPVOID lParam);
 
