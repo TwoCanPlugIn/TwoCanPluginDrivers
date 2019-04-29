@@ -25,8 +25,10 @@
 // Unit Description: Access Kvaser Lightleaf adapter via Kvaser library
 // Date: 6/8/2018
 // Function: On receipt of valid CAN frame, converts Kvaser format into 
-// TwoCan format and signals an event to the application
-//
+// TwoCan format and signals an event to the application.
+// Version History
+// 1.0 Initial Release
+// 1.1 - 2/4/2019 Added Write function
 
 #include "..\inc\kvaser.h"
 
@@ -96,7 +98,7 @@ DllExport char *DriverName(void)	{
 //
 
 DllExport char *DriverVersion(void)	{
-	return (char *)L"1.0";
+	return (char *)L"1.1";
 }
 
 //
@@ -116,7 +118,7 @@ DllExport char *ManufacturerName(void)	{
 
 DllExport int OpenAdapter(void)	{
 	// Create an event that is used to notify the caller of a received frame
-	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
+	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
 
 	if (frameReceivedEvent == NULL)
 	{
@@ -268,6 +270,23 @@ DllExport int ReadAdapter(byte *frame)	{
 	isRunning = FALSE;
 	DebugPrintf(L"Read thread failed: %d (%d)\n", threadId, GetLastError());
 	return SET_ERROR(TWOCAN_RESULT_FATAL, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_CREATE_THREAD_HANDLE);
+}
+
+//
+// Write, Transmit a frame onto the NMEA 2000 network
+// [in] 29bit Can header (id), payload and payload length
+// returns TWOCAN_RESULT_SUCCESS 
+//
+
+DllExport int WriteAdapter(const unsigned int id, const int dataLength, byte *data) {
+	status = canWrite(handle, id, data, dataLength, canMSG_EXT);
+	if (status == canOK) {
+		return TWOCAN_RESULT_SUCCESS;
+	}
+	else {
+		DebugPrintf(L"Transmit frame failed: %d\n", status);
+		return SET_ERROR(TWOCAN_RESULT_ERROR, TWOCAN_SOURCE_DRIVER, TWOCAN_ERROR_TRANSMIT_FAILURE);
+	}
 }
 
 //
