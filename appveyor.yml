@@ -43,7 +43,8 @@ before_build:
   - cmake ..
 
 build_script:
-  - cmake --build . --target package --config release
+  - cmake --build . --config release
+  # - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
 
 artifacts:
