@@ -129,7 +129,7 @@ DllExport int OpenAdapter(void)	{
 	DebugPrintf(L"Open Adapter called\n");
 
 	// Create an event that is used to notify the caller of a received frame
-	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
+	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
 
 	if (frameReceivedEvent == NULL)
 	{
@@ -471,11 +471,11 @@ int ConfigureSerialPort(void) {
 	}
 
 	COMMTIMEOUTS timeouts = { 0 };
-	timeouts.ReadIntervalTimeout = 2000;
-	timeouts.ReadTotalTimeoutConstant = 50;
-	timeouts.ReadTotalTimeoutMultiplier = 10;
-	timeouts.WriteTotalTimeoutConstant = 50;
-	timeouts.WriteTotalTimeoutMultiplier = 10;
+	timeouts.ReadIntervalTimeout = 10;
+	timeouts.ReadTotalTimeoutConstant = 0;
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 10;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
 
 	if (!SetCommTimeouts(serialPortHandle, &timeouts)) {
 		DebugPrintf(L"Error setting Time Outs %ld\n", GetLastError());
