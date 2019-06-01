@@ -32,7 +32,6 @@
 
 #include "..\inc\kvaser.h"
 #include "..\..\common\inc\twocanerror.h"
-#define CONST_DATARX_EVENT L"Global\\DataReceived"
 
 // Separate thread to read data from the Kvaser Lightleaf device
 HANDLE threadHandle;
