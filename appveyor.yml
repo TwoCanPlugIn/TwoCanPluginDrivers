@@ -52,7 +52,7 @@ build_script:
   - copy ..\build\Kvaser\Release\kvaser.dll ..\build
   - copy ..\build\CanDumpLog\Release\candumplog.dll  ..\build
   - copy ..\build\KeesLog\Release\keeslog.dll  ..\build
-  - copy ..\build\YachtDeviceslog\Release\yachtdevices.dll  ..\build
+  - copy ..\build\YachtDeviceslog\Release\yachtdeviceslog.dll  ..\build
   - dir c:\project\twocandrivers\build
   - dir c:\project\twocandrivers
 
