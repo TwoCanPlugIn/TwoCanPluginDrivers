@@ -22,14 +22,14 @@ install:
   - cmd: SET PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\Program Files (x86)\Poedit\Gettexttools\bin;
 
   # install dependencies:
-  - choco install poedit
+#  - choco install poedit
 
   - ps: Start-FileDownload http://opencpn.navnux.org/build_deps/nsis-3.04-setup.exe
   - cmd: nsis-3.04-setup.exe /S
 
   # Download and unzip wxwidgets
-  - ps: Start-FileDownload http://opencpn.navnux.org/build_deps/wxWidgets-3.1.2.7z
-  - cmd: 7z x wxWidgets-3.1.2.7z -o%WXWIN% > null
+#  - ps: Start-FileDownload http://opencpn.navnux.org/build_deps/wxWidgets-3.1.2.7z
+#  - cmd: 7z x wxWidgets-3.1.2.7z -o%WXWIN% > null
 
   #- set #Use only while debugging - it reveals the deploy token set on Appveyor
 
@@ -37,18 +37,27 @@ before_build:
   - cd c:\project\twocandrivers
   - mkdir build
   - cd build
-  - ps: Start-FileDownload https://downloads.sourceforge.net/project/opencpnplugins/opencpn_lib/4.99.1405-vc141_xp/opencpn.lib
-  - ps: Start-FileDownload http://opencpn.navnux.org/build_deps/OpenCPN_buildwin-4.99a.7z
-  - cmd: 7z x -y OpenCPN_buildwin-4.99a.7z -oc:\project\twocandrivers\buildwin
+#  - ps: Start-FileDownload https://downloads.sourceforge.net/project/opencpnplugins/opencpn_lib/4.99.1405-vc141_xp/opencpn.lib
+#  - ps: Start-FileDownload http://opencpn.navnux.org/build_deps/OpenCPN_buildwin-4.99a.7z
+#  - cmd: 7z x -y OpenCPN_buildwin-4.99a.7z -oc:\project\twocandrivers\buildwin
   - cmake ..
 
 build_script:
   - cmake --build . --config release
   # - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
+  - copy ..\build\Axiomtek\Release\axiomtek.dll ..\build
+  - copy ..\build\Cantact\Release\cantact.dll ..\build
+  - copy ..\build\FileDevice\Release\filedevice.dll ..\build
+  - copy ..\build\Kvaser\Release\kvaser.dll ..\build
+  - copy ..\build\CanDumpLog\Release\candumplog.dll  ..\build
+  - copy ..\build\KeesLog\Release\keeslog.dll  ..\build
+  - copy ..\build\YachtDeviceslog\Release\yachtdevices.dll  ..\build
+  - dir c:\project\twocandrivers\build
+  - dir c:\project\twocandrivers
 
 artifacts:
-  - path: 'build\*.exe'
+  - path: 'build\*.dll'
     name: installer
 
 deploy:
