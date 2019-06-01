@@ -29,8 +29,10 @@ extern "C"
 #include <windows.h>
 
 // Events and Mutexes used to notify callers & control access to data
-#define CONST_EVENT_NAME L"Global\\DataReceived"
+#define CONST_DATARX_EVENT L"Global\\DataReceived"
+#define CONST_DATATX_EVENT L"Global\\DataTransmit"
 #define CONST_MUTEX_NAME L"Global\\DataMutex"
+#define CONST_RW_MUTEX L"Globa\\ReadWriteMutex"
 #define CONST_EVENT_THREAD_ENDED L"Local\\ThreadEnded"
 
 // Treat all received NMEA 2000 bytes as unsigned char

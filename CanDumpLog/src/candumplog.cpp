@@ -114,7 +114,7 @@ DllExport int OpenAdapter(void)	{
 	DebugPrintf(L"Open called\n");
 
 	// Create an event that is used to notify the caller of a received frame
-	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
+	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
 
 	if (frameReceivedEvent == NULL)
 	{
@@ -256,18 +256,6 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 	HRESULT result;
 	byte canFrame[12];
 	
-	
-	// For Posix use the following
-	// #include <unistd.h>
-	// #include <sys/types.h>
-	// #include <pwd.h>
-	// struct passwd *pw = getpwuid(getuid());
-	// const char *homedir = pw->pw_dir;
-	// const char *homedir;
-	//if ((homedir = getenv("HOME")) == NULL) {
-	//	homedir = getpwuid(getuid())->pw_dir;
-	//}
-
 	result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, fileName);
 
 	if (result == S_OK) {
@@ -282,7 +270,9 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 			// read a line from the log file
 			std::string inputLine;
 			// specific regular expression for candump log format
-			std::regex canDumpRegex("^\\([0-9]+.[0-9]+\\)\\scan[0-9]\\s([0-9A-F]{8})#([0-9A-F]{16})$");
+			std::regex canDumpRegex("^\\([0-9]+.[0-9]+\\)\\s(slcan|vcan|can)[0-9]\\s([0-9A-F]{8})#([0-9A-F]{16})$");
+			// Another candump format with a different time stamp.
+			// std::regex canDumpRegexB("^\\([0-9]{2}:[0-9]{2}\\s:\\s[0-9]{2}\\.[0-9]{6}\\)\\s\\s[0-9]\\s\\s([0-9A-F]{8})\\[8\\]\\s\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})\\s([0-9A-F]{2})$");
 			std::smatch matchGroups;
 
 			while (isRunning)  {
@@ -309,12 +299,12 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 				if (std::regex_match(inputLine, matchGroups, canDumpRegex)) {
 
 					// Copy the 4 byte header
-					unsigned long temp = std::strtoul(matchGroups[1].str().c_str(), NULL, 16);
+					unsigned long temp = std::strtoul(matchGroups[2].str().c_str(), NULL, 16);
 					memcpy(&canFrame[0], &temp, 4);
 
 					// copy the 8 byte payload
 					byte payload[8];
-					ConvertHexStringToByteArray((const byte *)matchGroups[2].str().c_str(), 8, payload);
+					ConvertHexStringToByteArray((const byte *)matchGroups[3].str().c_str(), 8, payload);
 					memcpy(&canFrame[4], payload, 8);
 
 					// make sure we can get a lock on the buffer

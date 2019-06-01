@@ -114,7 +114,7 @@ DllExport int OpenAdapter(void)	{
 	DebugPrintf(L"Open called\n");
 
 	// Create an event that is used to notify the caller of a received frame
-	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
+	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
 
 	if (frameReceivedEvent == NULL)
 	{
@@ -252,7 +252,7 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 	HRESULT result;
 	CanHeader header;
 	byte canFrame[12];
-	
+
 	result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, fileName);
 
 	if (result == S_OK) {
@@ -283,7 +283,7 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 				}
 
 				// BUG BUG Not sure if this trickles up to report error
-				
+
 				if (!std::regex_match(inputLine, keesRegex)) {
 					if (!std::regex_match(inputLine, isoRequest)) {
 						DebugPrintf(L"Invalid Log file Format: %s\n", inputLine);
@@ -353,7 +353,7 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 			SetEvent(threadFinishedEvent);
 			ExitThread(TWOCAN_RESULT_SUCCESS);
 
-		} // end if file "candump.log" exists
+		} // end if file "kees.log" exists
 		else {
 			DebugPrintf(L"LogFile Error: %d (%d)\n", result, GetLastError());
 			isRunning = FALSE;
