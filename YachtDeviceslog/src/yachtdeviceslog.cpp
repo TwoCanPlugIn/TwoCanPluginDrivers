@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with TwoCan. If not, see <https://www.gnu.org/licenses/>.
 //
-// NMEA2000® is a registered Trademark of the National Marine Electronics Association
+// NMEA2000Â® is a registered Trademark of the National Marine Electronics Association
 
 //
 // Project: TwoCan
@@ -114,7 +114,6 @@ DllExport int OpenAdapter(void)	{
 
 	// Create an event that is used to notify the caller of a received frame
 	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
-
 	if (frameReceivedEvent == NULL)
 	{
 		// Fatal error
