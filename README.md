@@ -10,7 +10,7 @@ NMEA2000® is a registered trademark of the National Marine Electronics Associati
 CAN Hardware interfaces
 -----------------------
 
-Three hardware interfaces are supported for Windows:
+Four hardware interfaces are supported for Windows:
 
 Kvaser Leaflight HS v2 - https://www.kvaser.com/product/kvaser-leaf-light-hs-v2/
 USB interface, well packaged, relatively expensive, uses Kvaser provided software libraries
@@ -20,6 +20,9 @@ USB interface, very small PCB board, inexpensive, uses serial communications.
 
 Axiomtek AX92903 - http://www.axiomtek.com/Default.aspx?MenuId=Products&FunctionId=ProductView&ItemId=8270&upcat=318&C=AX92903
 Mini PCI Express (fits notebooks & some mini-ATX form factor motherboards), relatively inexpensive, uses serial communications.
+
+Rusoku Toucan Marine - http://www.rusoku.com/products/toucan-marine
+USB interface, well packaged with small plastic enclosure complete with M-12 5 pin connector ready to connect into existing NMEA 2000 network. Inexpensive. Uses provided CAN Abstraction Layer (CANAL) libraries.
 
 Log File Software interfaces
 -----------------------
@@ -81,8 +84,14 @@ Installation
 ------------
 I have yet to figure out the CMAKE or CPACK commands to create an installation package, so no installation utilities are provided.
 
-Simply copy the resulting builds (axiomtek.dll, cantact.dll, filedevice.dll or kvaser.dll) into
+Simply copy the resulting builds (axiomtek.dll, cantact.dll, filedevice.dll, kvaser.dll or toucan.dll) into
 C:\Program Files\OpenCPN\PlugIns\TwoCan_PI\Drivers (This assumes a default install of OpenCPN on Windows)
+
+For the Kvaser Leaflight adapter, ensure that the Kvaser installation has been performed in order for the necessary Kvaser drivers to be installed. 
+
+For the Rusoku Toucan Marine adapter, ensure the following two steps have been undertaken.
+1. After connecting the adapter, check the windows Device Manager to ensure that the WinUSB drivers have been installed. If your Windows system is configured to check for updated driver files from the Internet then it should be automatically installed. If not from Devie Manager select "Update Driver" and select the Rusoku .inf file found in this git repository.
+2. Copy the CAN Abstraction Layer (CANAL) Dynamic Link Library (DLL) "canal32.dll to your Windows System32 folder.
 
 Problems
 --------
