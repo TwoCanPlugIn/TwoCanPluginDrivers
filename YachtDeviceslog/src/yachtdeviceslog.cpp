@@ -113,7 +113,7 @@ DllExport int OpenAdapter(void)	{
 	DebugPrintf(L"Open called\n");
 
 	// Create an event that is used to notify the caller of a received frame
-	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_EVENT_NAME);
+	frameReceivedEvent = CreateEvent(NULL, FALSE, FALSE, CONST_DATARX_EVENT);
 
 	if (frameReceivedEvent == NULL)
 	{
