@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with TwoCan. If not, see <https://www.gnu.org/licenses/>.
 //
-// NMEA2000® is a registered Trademark of the National Marine Electronics Association
+// NMEA2000Â® is a registered Trademark of the National Marine Electronics Association
 
 //
 // Project: TwoCan
@@ -719,5 +719,5 @@ int GetRegistrySettings(WCHAR *friendlyName, WCHAR *portName, int *baudRate, int
 
 	}// end iterating sub keys
 
-	return TWOCAN_RESULT_SUCCESS;
+	return TRUE;
 }
