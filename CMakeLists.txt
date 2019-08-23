@@ -7,11 +7,6 @@
 # define minimum cmake version
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-IF(CMAKE_BUILD_TYPE STREQUAL release)
-    message(STATUS "**********  release mode")
-ENDIF(CMAKE_BUILD_TYPE STREQUAL release)
-
-
 PROJECT(TwoCanPlugInDrivers)
 
 ADD_SUBDIRECTORY(Common)
@@ -22,3 +17,4 @@ ADD_SUBDIRECTORY(Kvaser)
 ADD_SUBDIRECTORY(CandumpLog)
 ADD_SUBDIRECTORY(KeesLog)
 ADD_SUBDIRECTORY(YachtDevicesLog)
+ADD_SUBDIRECTORY(Toucan)
