@@ -1,0 +1,82 @@
+[Strings]
+Manufacturer="WinUsb Device"
+DeviceName="WinUsb Device"
+
+[Version]
+Signature="$Windows NT$"
+Class=USB Device
+ClassGuid={88BAE032-5A81-49F0-BC3D-A4FF138216D6}
+Provider="Microsoft"
+BootCritical=0
+pnplockdown=1; third party protected
+DriverVer=02/26/2012,6.1.7600.16385
+
+[ClassInstall32]
+AddReg=WinUsbDeviceClassAddReg
+
+[WinUsbDeviceClassAddReg]
+HKR,,,0,"Universal Serial Bus devices"
+HKR,,Icon,,-20
+
+[Manufacturer]
+%Manufacturer%=WinUsbDevice,NTx86,NTamd64,NTia64
+
+[WinUsbDevice.NTx86]
+%DeviceName%=WinUsbInstall,USB\MS_COMP_WINUSB
+
+[WinUsbDevice.NTamd64]
+%DeviceName%=WinUsbInstall,USB\MS_COMP_WINUSB
+
+[WinUsbDevice.NTia64]
+%DeviceName%=WinUsbInstall,USB\MS_COMP_WINUSB
+
+[WinUsbInstall]
+Include=winusb.inf
+Needs=WINUSB.NT
+
+[WinUsbInstall.Services]
+Include=winusb.inf
+AddService=WinUSB,0x00000002,WinUsbServiceInstall
+
+[WinUsbServiceInstall]
+DisplayName="WinUsb Driver"
+ServiceType=1; SERVICE_KERNEL_DRIVER
+StartType=3
+ErrorControl=1; SERVICE_ERROR_NORMAL
+ServiceBinary=%12%\winusb.sys
+
+[WinUsbInstall.Wdf]
+KmdfService=WINUSB,KmdfInstall
+
+[KmdfInstall]
+KmdfLibraryVersion=1.11
+
+[WinUsbInstall.CoInstallers]
+AddReg=WinUsbCoInstallersAddReg
+CopyFiles=WinUsbCoInstallersCopyFiles
+
+[WinUsbCoInstallersAddReg]
+HKR,,CoInstallers32,0x00010000,"WdfCoInstaller01011.dll,WdfCoInstaller","WinUSBCoInstaller2.dll"
+
+[WinUsbCoInstallersCopyFiles]
+WinUSBCoInstaller2.dll
+WdfCoInstaller01011.dll
+
+[DestinationDirs]
+WinUsbCoInstallersCopyFiles=11
+
+[SourceDisksNames]
+1="WinUsb Device Driver Disk"
+
+[SourceDisksFiles.x86]
+WinUSBCoInstaller2.dll=1,x86
+WdfCoInstaller01011.dll=1,x86
+
+[SourceDisksFiles.amd64]
+WinUSBCoInstaller2.dll=1,amd64
+WdfCoInstaller01011.dll=1,amd64
+
+[SourceDisksFiles.ia64]
+WinUSBCoInstaller2.dll=1,ia64
+WdfCoInstaller01011.dll=1,ia64
+
