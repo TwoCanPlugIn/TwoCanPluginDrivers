@@ -319,7 +319,7 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 		// BUG BUG Use Blocking or non-Blocking calls ??
 		status = CanalBlockingReceive(handle, &msg, 20);
 
-		if(status == CANAL_ERROR_SUCCESS) {
+		if (status == CANAL_ERROR_SUCCESS) {
 
 			// Only interested in CAN 2.0 extended frames with 29bit Id's
 			if (msg.flags & CANAL_IDFLAG_EXTENDED) {
@@ -376,15 +376,14 @@ DWORD WINAPI ReadThread(LPVOID lParam)
 	ExitThread(TWOCAN_RESULT_SUCCESS);
 }
 
-#define TOUCAN_KEY_UNICODE  L"{88BAE032-5A81-49F0-BC3D-A4FF138216D6}"
-#define TOUCAN_KEY_ANSI "{88BAE032-5A81-49F0-BC3D-A4FF138216D6}"
+#define TOUCAN_KEY_UNICODE  L"{FD361109-858D-4F6F-81EE-AAB5D6CBF06B}"
+#define TOUCAN_KEY_ANSI "{FD361109-858D-4F6F-81EE-AAB5D6CBF06B}"
 #define TOUCAN_PNP_KEY L"SYSTEM\\CurrentControlSet\\enum\\USB\\VID_16D0&PID_0EAC"
 
 BOOL FindAdapter(char *serialNumber, int serialNumberLength) {
-	// From .inf file the guid {88BAE032-5A81-49F0-BC3D-A4FF138216D6} matches the key ClassGUID
-	// found in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB\VID_16D0&PID_0EAC
+	// From the Rusoku CANAL source, the DeviceInterfaceGUID {FD361109-858D-4F6F-81EE-AAB5D6CBF06B} 
+	// should be found in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB\VID_16D0&PID_0EAC
 	// under a sub key which appears to be the serial number of the device.
-	// Could also check DeviceClassGUID, 
 
 	DebugPrintf(L"Opening Registry\n");
 	DebugPrintf(L"Key Name: %s\n", TOUCAN_KEY_UNICODE);
@@ -399,22 +398,25 @@ BOOL FindAdapter(char *serialNumber, int serialNumberLength) {
 	WCHAR *keyValue = (WCHAR *)malloc(1024);
 	DWORD keyLength = 1024;
 
+	WCHAR *deviceParametersKey = (WCHAR *)malloc(1024);
 	DWORD keyType;
 
 	// Get a handle to the registry key for the Rusoku Toucan device
 	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TOUCAN_PNP_KEY, 0, KEY_READ, &registryKey);
 
+	DebugPrintf(L"RegOpenKey: %d (%d)\n", result, GetLastError());
+
 	// if the key isn't found, assume the Rusoku Toucan device has never been installed
 	if (result != ERROR_SUCCESS) {
+		free(deviceParametersKey);
 		free(keyValue);
 		free(subKeyName);
 		return foundKey;
 	}
 
-	// key is present so assume Rusoku Toucan device has at least been installed
-	DebugPrintf(L"RegOpenKey: %d (%d)\n", result, GetLastError());
+	// Registry Key is present so assume Rusoku Toucan device has at least been installed
 
-	// iterate the sub keys until we find the sub key that contains the matching classGUID value
+	// iterate the sub keys until we find the sub key that contains the matching DeviceInterfaceGUID value
 	for (int i = 0;; i++) {
 
 		result = RegEnumKeyEx(registryKey, i, subKeyName, &subKeyLength, NULL, NULL, NULL, NULL);
@@ -423,17 +425,21 @@ BOOL FindAdapter(char *serialNumber, int serialNumberLength) {
 		}
 
 		// BUG BUG Debug
+		// Note the sub key is the device serial number
 		DebugPrintf(L"Sub Key: %s (%d)\n", subKeyName, subKeyLength);
 
-		// check if we have the correct registry key by comparing with the GUID from the .inf file
-		result = RegGetValue(registryKey, subKeyName, L"ClassGUID", RRF_RT_ANY, &keyType, keyValue, &keyLength);
+		// DeviceInterfaceGuid is found under the sub key "Device Parameters"
+		wsprintf(deviceParametersKey, L"%s\\Device Parameters", subKeyName);
+		
+		// check if we have the correct registry key by comparing with the GUID from the Rusoku CANAL source
+		result = RegGetValue(registryKey, deviceParametersKey, L"DeviceInterfaceGUID", RRF_RT_ANY, &keyType, keyValue, &keyLength);
 
 		// BUG BUG Debug
-		DebugPrintf(L"Class GUID Result: %d  (%d)\n", result, keyLength);
+		DebugPrintf(L"DeviceInterfaceGUID Result: %d\n", result);
 
 		if (result == ERROR_SUCCESS) {
 			// BUG BUG Debug
-			DebugPrintf(L"Class GUID Key Value: %s  [%d] \n", keyValue, keyType);
+			DebugPrintf(L"DeviceinterfaceGUID Key Value: %s  (Key Length: %d) (Key Type: %d)\n", keyValue, keyLength, keyType);
 
 			// handle both unicode or ANSI variants of the GUID
 			WCHAR unicodeValue[1024];
@@ -446,8 +452,8 @@ BOOL FindAdapter(char *serialNumber, int serialNumberLength) {
 				// wcsncpy(parentKey, keyValue, keyLength);
 				// DebugPrintf(L"Parent Key: %s\n", keyValue);
 
-				// The device serial number is the subkey which contained the matching ClassGUID
-				DebugPrintf(L"Device Serial Number: %s\n", subKeyName);
+				// The device serial number is the subkey which contained the matching DeviceInterfaceGUID
+				DebugPrintf(L"Device Serial Number: %s (Serial Number Length: %d)\n", subKeyName, subKeyLength);
 				
 				// Convert to ASCII string for use in CANAL initialization string
 				WideCharToMultiByte(CP_OEMCP, 0, subKeyName, -1, serialNumber, serialNumberLength, NULL, NULL);
@@ -456,8 +462,9 @@ BOOL FindAdapter(char *serialNumber, int serialNumberLength) {
 
 			} // end found matching GUID
 
-		} // end iterating subKeys for ClassGUID values
+		} // end iterating subKeys for DeviceInterfaceGUID values
 
+		free(deviceParametersKey);
 		free(keyValue);
 		free(subKeyName);
 
